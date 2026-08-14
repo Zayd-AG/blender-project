@@ -1,0 +1,41 @@
+{
+  "meters_per_stud": 0.28,
+  "stud_range": {
+    "min": 0.1,
+    "max": 100.0
+  },
+  "target_rig": "R15",
+  "rigs": {
+    "R15": {
+      "required_bones": [
+        "HumanoidRootPart",
+        "LowerTorso",
+        "UpperTorso",
+        "Head",
+        "LeftUpperArm",
+        "LeftLowerArm",
+        "LeftHand",
+        "RightUpperArm",
+        "RightLowerArm",
+        "RightHand",
+        "LeftUpperLeg",
+        "LeftLowerLeg",
+        "LeftFoot",
+        "RightUpperLeg",
+        "RightLowerLeg",
+        "RightFoot"
+      ]
+    },
+    "R6": {
+      "required_bones": [
+        "HumanoidRootPart",
+        "Torso",
+        "Head",
+        "Left Arm",
+        "Right Arm",
+        "Left Leg",
+        "Right Leg"
+      ]
+    }
+  }
+}
