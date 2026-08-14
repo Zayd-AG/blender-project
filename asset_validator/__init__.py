@@ -4,7 +4,7 @@ bl_info = {
     "name": "Asset Validator",
     "author": "Asset Validator Contributors",
     "version": (0, 1, 0),
-    "blender": (4, 5, 0),
+    "blender": (5, 0, 0),
     "location": "View3D > Sidebar > Asset Validator",
     "description": "Validate game-ready assets and safely fix supported issues",
     "category": "3D View",
