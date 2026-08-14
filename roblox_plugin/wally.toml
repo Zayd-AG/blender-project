@@ -1,6 +1,7 @@
 [package]
 name = "asset-validator/import-validator"
 version = "0.1.0"
+realm = "shared"
 registry = "https://github.com/UpliftGames/wally-index"
 
 [dependencies]

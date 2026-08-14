@@ -1,4 +1,4 @@
-local SafeFixes = require(script.Parent.Parent.src.Fixes.SafeFixes)
+local SafeFixes = require(script.Parent.Parent.ImportValidator.Fixes.SafeFixes)
 
 return function()
 	it("does not insert HumanoidRootPart without opt-in", function()

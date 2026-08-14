@@ -41,6 +41,9 @@ class ValidationConfig:
 
 def load_naming_pattern() -> str:
     """Load the shared naming contract used by Blender and the Studio plugin."""
+    packaged_candidate = Path(__file__).resolve().parents[1] / "shared" / "naming_pattern.json"
+    if packaged_candidate.exists():
+        return json.loads(packaged_candidate.read_text(encoding="utf-8"))["pattern"]
     for parent in Path(__file__).resolve().parents:
         candidate = parent / "shared" / "naming_pattern.json"
         if candidate.exists():

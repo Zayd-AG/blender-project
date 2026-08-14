@@ -1,0 +1,2 @@
+# Keep source and configuration diffs consistent across Windows and CI.
+* text=auto eol=lf

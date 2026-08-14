@@ -4,15 +4,21 @@ local SafeFixes = {}
 local function rootCandidate(model: Model): BasePart?
 	for _, name in { "HumanoidRootPart", "LowerTorso", "Torso", "UpperTorso" } do
 		local part = model:FindFirstChild(name)
-		if part and part:IsA("BasePart") then return part end
+		if part and part:IsA("BasePart") then
+			return part
+		end
 	end
 	return nil
 end
 
 function SafeFixes.setPrimaryPart(model: Model): boolean
-	if model.PrimaryPart then return false end
+	if model.PrimaryPart then
+		return false
+	end
 	local candidate = rootCandidate(model)
-	if not candidate then return false end
+	if not candidate then
+		return false
+	end
 	model.PrimaryPart = candidate
 	return true
 end
@@ -24,7 +30,9 @@ function SafeFixes.insertHumanoidRootPart(model: Model, rigType: "R6" | "R15"): 
 	end
 	local _, size = model:GetBoundingBox()
 	local torso = model:FindFirstChild(rigType == "R15" and "LowerTorso" or "Torso")
-	if not torso or not torso:IsA("BasePart") then return nil end
+	if not torso or not torso:IsA("BasePart") then
+		return nil
+	end
 	local root = Instance.new("Part")
 	root.Name = "HumanoidRootPart"
 	root.Size = Vector3.new(math.max(1, size.X * 0.3), math.max(1, size.Y * 0.3), math.max(1, size.Z * 0.3))
@@ -61,8 +69,12 @@ end
 
 function SafeFixes.apply(model: Model, rigType: "R6" | "R15", insertRoot: boolean): number
 	local changes = 0
-	if insertRoot and SafeFixes.insertHumanoidRootPart(model, rigType) then changes += 1 end
-	if SafeFixes.setPrimaryPart(model) then changes += 1 end
+	if insertRoot and SafeFixes.insertHumanoidRootPart(model, rigType) then
+		changes += 1
+	end
+	if SafeFixes.setPrimaryPart(model) then
+		changes += 1
+	end
 	changes += SafeFixes.renameCaseOnlyNearMisses(model, rigType)
 	return changes
 end

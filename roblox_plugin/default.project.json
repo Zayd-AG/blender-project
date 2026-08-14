@@ -4,6 +4,10 @@
     {
       "pattern": "../shared/*.json",
       "use": "text"
+    },
+    {
+      "pattern": "*.lua",
+      "use": "moduleScript"
     }
   ],
   "tree": {
@@ -11,17 +15,11 @@
     "ServerScriptService": {
       "ImportValidator": {
         "$path": "src"
-      },
-      "ImportValidatorTests": {
-        "$path": "tests"
       }
     },
     "ReplicatedStorage": {
       "AssetValidatorShared": {
         "$path": "../shared"
-      },
-      "Packages": {
-        "$path": "Packages"
       }
     }
   }

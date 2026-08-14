@@ -23,14 +23,15 @@ jobs:
       - name: Run deterministic Blender benchmarks
         working-directory: blender_addon
         run: blender --background --python run_benchmark.py
+      - name: Lint Blender source
+        run: |
+          python -m pip install ruff
+          ruff check blender_addon
       - name: Enforce benchmark thresholds
         working-directory: blender_addon
         run: python check_benchmark_thresholds.py
       - name: Package addon
-        run: |
-          mkdir -p dist
-          cd blender_addon
-          zip --recurse-paths ../dist/asset_validator.zip asset_validator -x '*/__pycache__/*' '*.pyc'
+        run: python blender_addon/package_addon.py
       - uses: actions/upload-artifact@v4
         with:
           name: asset-validator-addon
@@ -39,17 +40,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Selene
-        run: cargo install selene --locked
-      - name: Lint Luau plugin and tests
-        working-directory: roblox_plugin
-        run: selene src tests
-      - name: Install Rojo
-        run: cargo install rojo --locked
-      - name: Install Wally and run-in-roblox
+      - name: Install pinned Roblox toolchain
         run: |
-          cargo install wally-cli --locked
-          cargo install run-in-roblox --version 0.3.0 --locked
+          cargo install rokit --locked
+          cd roblox_plugin
+          rokit install --no-trust-check
+      - name: Lint Luau plugin source
+        working-directory: roblox_plugin
+        run: selene src
       - name: Install TestEZ
         working-directory: roblox_plugin
         run: wally install
@@ -58,10 +56,27 @@ jobs:
         run: |
           mkdir -p ../dist
           rojo build --output ../dist/ImportValidator.rbxmx default.project.json
-      - name: Run TestEZ suite headlessly
-        working-directory: roblox_plugin
-        run: run-in-roblox --place ../dist/ImportValidator.rbxmx --script tests/TestRunner.server.luau
       - uses: actions/upload-artifact@v4
         with:
           name: import-validator-plugin
           path: dist/ImportValidator.rbxmx
+  roblox-studio-tests:
+    # run-in-roblox drives an installed Studio instance. Enable this job only
+    # on a dedicated Windows self-hosted runner labeled `roblox-studio`.
+    if: vars.ENABLE_ROBLOX_STUDIO_TESTS == 'true'
+    runs-on: [self-hosted, windows, roblox-studio]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Roblox toolchain
+        run: |
+          cargo install rokit --locked
+          cd roblox_plugin
+          rokit install --no-trust-check
+      - name: Install TestEZ and build the test place
+        working-directory: roblox_plugin
+        run: |
+          wally install
+          rojo build --output ../dist/ImportValidator-tests.rbxlx test.project.json
+      - name: Run TestEZ suite in Roblox Studio
+        working-directory: roblox_plugin
+        run: run-in-roblox --place ../dist/ImportValidator-tests.rbxlx --script tests/TestRunner.server.luau

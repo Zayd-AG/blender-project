@@ -22,13 +22,13 @@ Replace these placeholders with real captures before publishing your portfolio.
 
 ## Install
 
-1. Create the distributable zip with `cd blender_addon; zip -r ../dist/asset_validator.zip asset_validator`.
+1. Create the distributable zip with `python blender_addon/package_addon.py`.
 2. In Blender, use **Edit > Preferences > Add-ons > Install from Disk**.
 3. Select the zip, enable **Asset Validator**, then open the 3D Viewport sidebar with `N`.
 
 ## Results
 
-The deterministic benchmark suite currently records placeholders from [the benchmark report](blender_addon/docs/BENCHMARKS.md):
+The deterministic benchmark suite currently records these local benchmark placeholders:
 
 | Suite | Precision | Recall | F1 |
 | --- | ---: | ---: | ---: |
@@ -36,3 +36,7 @@ The deterministic benchmark suite currently records placeholders from [the bench
 | Agent triage | 1.000 | 1.000 | 1.000 |
 
 Run `cd blender_addon; blender --background --python run_benchmark.py` to regenerate the numbers after changing validators or agent behavior.
+
+## CI
+
+GitHub Actions runs the Blender and Roblox build jobs independently. The Studio-backed TestEZ job is opt-in through `ENABLE_ROBLOX_STUDIO_TESTS=true` and requires a Windows self-hosted runner labeled `roblox-studio`, because it drives an installed Roblox Studio instance.

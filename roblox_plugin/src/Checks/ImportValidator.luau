@@ -33,9 +33,13 @@ local function add(findings: { Finding }, instance: Instance, issue: string, sev
 end
 
 local function isStandardRigInstance(instance: Instance, rigType: "R6" | "R15"): boolean
-	if instance:IsA("Humanoid") then return true end
+	if instance:IsA("Humanoid") then
+		return true
+	end
 	local profile = RIGS[rigType]
-	if table.find(profile.parts, instance.Name) then return true end
+	if table.find(profile.parts, instance.Name) then
+		return true
+	end
 	return profile.motors[instance.Name] ~= nil
 end
 
@@ -60,14 +64,23 @@ function ImportValidator.summarizeMeshCounts(instances: { Instance }, getEditabl
 end
 
 local function checkRig(model: Model, config: Config, findings: { Finding })
-	if not model:FindFirstChildOfClass("Humanoid") then return end
+	if not model:FindFirstChildOfClass("Humanoid") then
+		return
+	end
 	local profile = RIGS[config.rigType]
 	for _, name in profile.parts do
 		if not model:FindFirstChild(name) then
 			local suggestion = nil
-			for _, candidate in model:GetDescendants() do if candidate.Name:lower() == name:lower() then suggestion = candidate.Name; break end end
+			for _, candidate in model:GetDescendants() do
+				if candidate.Name:lower() == name:lower() then
+					suggestion = candidate.Name
+					break
+				end
+			end
 			local description = "Missing " .. name .. " for " .. config.rigType .. "."
-			if suggestion then description ..= " Possible case-only match: " .. suggestion .. "." end
+			if suggestion then
+				description ..= " Possible case-only match: " .. suggestion .. "."
+			end
 			add(findings, model, "rig_missing_part", "high", description, name == "HumanoidRootPart")
 		end
 	end
@@ -98,7 +111,9 @@ function ImportValidator.validate(instances: { Instance }, config: Config, getEd
 		local model = root:IsA("Model") and root or root:FindFirstAncestorOfClass("Model")
 		if model and not checkedModels[model] then
 			checkedModels[model] = true
-			if not model.PrimaryPart then add(findings, model, "missing_primary_part", "medium", "Model has no PrimaryPart.", true) end
+			if not model.PrimaryPart then
+				add(findings, model, "missing_primary_part", "medium", "Model has no PrimaryPart.", true)
+			end
 			local size = model:GetExtentsSize()
 			if math.min(size.X, size.Y, size.Z) < config.minStuds or math.max(size.X, size.Y, size.Z) > config.maxStuds then
 				add(findings, model, "scale_out_of_range", "medium", "Model dimensions are outside the configured stud range.", true)
