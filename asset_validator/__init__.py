@@ -15,6 +15,8 @@ from pathlib import Path
 
 import bpy
 
+from .batch_export import RobloxUploadConfig, batch_export
+
 from .agent import (
     AnthropicClaudeClient,
     BuildReport,
@@ -62,12 +64,16 @@ class ASSETVALIDATOR_Preferences(bpy.types.AddonPreferences):
     )
     embedding_endpoint: bpy.props.StringProperty(name="Embedding Endpoint", default="")
     embedding_model: bpy.props.StringProperty(name="Embedding Model", default="")
+    roblox_api_key: bpy.props.StringProperty(name="Roblox API Key", subtype="PASSWORD", default="")
+    roblox_creator_user_id: bpy.props.StringProperty(name="Roblox Creator User ID", default="")
 
     def draw(self, context):
         self.layout.prop(self, "roblox_rig_type")
         self.layout.prop(self, "claude_model")
         self.layout.prop(self, "embedding_endpoint")
         self.layout.prop(self, "embedding_model")
+        self.layout.prop(self, "roblox_api_key")
+        self.layout.prop(self, "roblox_creator_user_id")
 
 
 class ASSETVALIDATOR_OT_run_validation(bpy.types.Operator):
@@ -214,6 +220,35 @@ class ASSETVALIDATOR_OT_record_human_resolution(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class ASSETVALIDATOR_OT_batch_export(bpy.types.Operator):
+    """Validate every mesh in a collection and export passing assets."""
+
+    bl_idname = "asset_validator.batch_export"
+    bl_label = "Batch Export"
+
+    def execute(self, context):
+        collection = context.scene.asset_validator_export_collection
+        if collection is None:
+            self.report({"ERROR"}, "Choose an export collection first.")
+            return {"CANCELLED"}
+        output_dir = Path(bpy.path.abspath(context.scene.asset_validator_output_directory))
+        preferences = context.preferences.addons[__package__].preferences
+        config = RobloxUploadConfig(
+            preferences.roblox_api_key or __import__("os").getenv("ROBLOX_OPEN_CLOUD_API_KEY"),
+            preferences.roblox_creator_user_id or __import__("os").getenv("ROBLOX_CREATOR_USER_ID"),
+        )
+        report = batch_export(
+            collection,
+            output_dir,
+            upload_to_roblox=context.scene.asset_validator_upload_to_roblox,
+            upload_config=config,
+            roblox_rig_type=preferences.roblox_rig_type,
+        )
+        passed = sum(asset["status"] == "passed" for asset in report["assets"])
+        self.report({"INFO"}, f"Batch export complete: {passed}/{len(report['assets'])} passed")
+        return {"FINISHED"}
+
+
 class ASSETVALIDATOR_PT_sidebar(bpy.types.Panel):
     """3D View sidebar panel for the addon."""
 
@@ -254,6 +289,12 @@ class ASSETVALIDATOR_PT_sidebar(bpy.types.Panel):
         if roblox_count >= 0:
             roblox_box.label(text=f"Findings: {roblox_count}")
         layout.label(text=f"Precedents learned: {context.window_manager.asset_validator_precedent_count}")
+        export_box = layout.box()
+        export_box.label(text="Batch Export")
+        export_box.prop(context.scene, "asset_validator_export_collection")
+        export_box.prop(context.scene, "asset_validator_output_directory")
+        export_box.prop(context.scene, "asset_validator_upload_to_roblox", text="Upload to Roblox")
+        export_box.operator(ASSETVALIDATOR_OT_batch_export.bl_idname)
 
 
 CLASSES = (
@@ -262,6 +303,7 @@ CLASSES = (
     ASSETVALIDATOR_OT_apply_safe_fixes,
     ASSETVALIDATOR_OT_run_agent_triage,
     ASSETVALIDATOR_OT_record_human_resolution,
+    ASSETVALIDATOR_OT_batch_export,
     ASSETVALIDATOR_OT_check_roblox_compatibility,
     ASSETVALIDATOR_PT_sidebar,
 )
@@ -274,6 +316,9 @@ def register():
     bpy.types.WindowManager.asset_validator_roblox_count = bpy.props.IntProperty(default=-1)
     bpy.types.WindowManager.asset_validator_triage_summary = bpy.props.StringProperty(default="")
     bpy.types.WindowManager.asset_validator_precedent_count = bpy.props.IntProperty(default=0)
+    bpy.types.Scene.asset_validator_export_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
+    bpy.types.Scene.asset_validator_output_directory = bpy.props.StringProperty(subtype="DIR_PATH", default="//exports")
+    bpy.types.Scene.asset_validator_upload_to_roblox = bpy.props.BoolProperty(default=False)
     for cls in CLASSES:
         bpy.utils.register_class(cls)
 
@@ -285,5 +330,8 @@ def unregister():
     del bpy.types.WindowManager.asset_validator_roblox_count
     del bpy.types.WindowManager.asset_validator_triage_summary
     del bpy.types.WindowManager.asset_validator_precedent_count
+    del bpy.types.Scene.asset_validator_upload_to_roblox
+    del bpy.types.Scene.asset_validator_output_directory
+    del bpy.types.Scene.asset_validator_export_collection
     del bpy.types.WindowManager.asset_validator_after_count
     del bpy.types.WindowManager.asset_validator_before_count
