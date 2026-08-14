@@ -21,13 +21,16 @@ jobs:
           tar --extract --file blender.tar.xz
           echo "$PWD/blender-${BLENDER_VERSION}-linux-x64" >> "$GITHUB_PATH"
       - name: Run deterministic Blender benchmarks
+        working-directory: blender_addon
         run: blender --background --python run_benchmark.py
       - name: Enforce benchmark thresholds
+        working-directory: blender_addon
         run: python check_benchmark_thresholds.py
       - name: Package addon
         run: |
           mkdir -p dist
-          zip --recurse-paths dist/asset_validator.zip asset_validator -x '*/__pycache__/*' '*.pyc'
+          cd blender_addon
+          zip --recurse-paths ../dist/asset_validator.zip asset_validator -x '*/__pycache__/*' '*.pyc'
       - uses: actions/upload-artifact@v4
         with:
           name: asset-validator-addon

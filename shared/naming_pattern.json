@@ -1,0 +1,4 @@
+{
+  "pattern": "^SM_[A-Za-z0-9_]+$",
+  "description": "Static mesh names must use the SM_ prefix and contain no spaces."
+}

@@ -8,11 +8,9 @@ Production assets routinely reach export with topology, UV, transform, naming, t
 
 ## Architecture
 
-- `checks/` contains deterministic generic and Roblox compatibility validation.
-- `fixes.py` applies safe geometry, normal, and transform repairs.
-- `agent/` proposes resolutions for ambiguous findings, logs its tool trace, and learns from human precedents.
-- `batch_export.py` validates a collection, exports passing FBX/glTF assets, and optionally uploads validated FBX models to Roblox.
-- `lod.py` generates optional decimated LOD copies and records a fidelity proxy.
+- `blender_addon/` contains the Blender Python addon, its tests, benchmarks, and Ruff configuration.
+- `roblox_plugin/` contains the independent Rojo/Selene Luau companion-plugin toolchain.
+- `shared/` holds the naming and build-report JSON contracts used by both sides.
 
 ## Screenshots
 
@@ -24,17 +22,17 @@ Replace these placeholders with real captures before publishing your portfolio.
 
 ## Install
 
-1. Create the distributable zip with `zip -r dist/asset_validator.zip asset_validator`.
+1. Create the distributable zip with `cd blender_addon; zip -r ../dist/asset_validator.zip asset_validator`.
 2. In Blender, use **Edit > Preferences > Add-ons > Install from Disk**.
 3. Select the zip, enable **Asset Validator**, then open the 3D Viewport sidebar with `N`.
 
 ## Results
 
-The deterministic benchmark suite currently records placeholders from [the benchmark report](docs/BENCHMARKS.md):
+The deterministic benchmark suite currently records placeholders from [the benchmark report](blender_addon/docs/BENCHMARKS.md):
 
 | Suite | Precision | Recall | F1 |
 | --- | ---: | ---: | ---: |
 | Geometry / compatibility | 1.000 | 1.000 | 1.000 |
 | Agent triage | 1.000 | 1.000 | 1.000 |
 
-Run `blender --background --python run_benchmark.py` to regenerate the numbers after changing validators or agent behavior.
+Run `cd blender_addon; blender --background --python run_benchmark.py` to regenerate the numbers after changing validators or agent behavior.
