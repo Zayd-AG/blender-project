@@ -41,6 +41,27 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Selene
         run: cargo install selene --locked
-      - name: Lint Luau plugin
+      - name: Lint Luau plugin and tests
         working-directory: roblox_plugin
-        run: selene src
+        run: selene src tests
+      - name: Install Rojo
+        run: cargo install rojo --locked
+      - name: Install Wally and run-in-roblox
+        run: |
+          cargo install wally-cli --locked
+          cargo install run-in-roblox --version 0.3.0 --locked
+      - name: Install TestEZ
+        working-directory: roblox_plugin
+        run: wally install
+      - name: Build plugin package
+        working-directory: roblox_plugin
+        run: |
+          mkdir -p ../dist
+          rojo build --output ../dist/ImportValidator.rbxmx default.project.json
+      - name: Run TestEZ suite headlessly
+        working-directory: roblox_plugin
+        run: run-in-roblox --place ../dist/ImportValidator.rbxmx --script tests/TestRunner.server.luau
+      - uses: actions/upload-artifact@v4
+        with:
+          name: import-validator-plugin
+          path: dist/ImportValidator.rbxmx

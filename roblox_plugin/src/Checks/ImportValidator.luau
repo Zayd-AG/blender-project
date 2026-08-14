@@ -64,7 +64,11 @@ local function checkRig(model: Model, config: Config, findings: { Finding })
 	local profile = RIGS[config.rigType]
 	for _, name in profile.parts do
 		if not model:FindFirstChild(name) then
-			add(findings, model, "rig_missing_part", "high", "Missing " .. name .. " for " .. config.rigType .. ".", false)
+			local suggestion = nil
+			for _, candidate in model:GetDescendants() do if candidate.Name:lower() == name:lower() then suggestion = candidate.Name; break end end
+			local description = "Missing " .. name .. " for " .. config.rigType .. "."
+			if suggestion then description ..= " Possible case-only match: " .. suggestion .. "." end
+			add(findings, model, "rig_missing_part", "high", description, name == "HumanoidRootPart")
 		end
 	end
 	local root = model:FindFirstChild("HumanoidRootPart")

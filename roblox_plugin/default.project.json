@@ -11,11 +11,17 @@
     "ServerScriptService": {
       "ImportValidator": {
         "$path": "src"
+      },
+      "ImportValidatorTests": {
+        "$path": "tests"
       }
     },
     "ReplicatedStorage": {
       "AssetValidatorShared": {
         "$path": "../shared"
+      },
+      "Packages": {
+        "$path": "Packages"
       }
     }
   }

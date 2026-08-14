@@ -1,1 +1,8 @@
-{}
+{
+  "schema_version": "1.0",
+  "required": ["generated_at", "collection", "assets"],
+  "asset": {
+    "required": ["object_name", "status", "findings"],
+    "finding": ["issue", "severity", "description", "auto_fixable"]
+  }
+}
