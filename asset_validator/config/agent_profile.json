@@ -1,0 +1,6 @@
+{
+  "model": null,
+  "confidence_threshold": 0.85,
+  "max_turns_per_finding": 8,
+  "build_report": "asset_validator_build_report.jsonl"
+}
