@@ -111,7 +111,7 @@ Fixtures are programmatically built in `test/fixtures/benchmark_fixtures.py` and
 
 Agent scoring compares the proposed action or escalation against human labels; it is intentionally separate from geometry detection.
 """
-    (ROOT / "BENCHMARKS.md").write_text(text, encoding="utf-8")
+    (ROOT / "docs" / "BENCHMARKS.md").write_text(text, encoding="utf-8")
 
 
 if __name__ == "__main__":

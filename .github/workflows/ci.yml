@@ -1,0 +1,34 @@
+name: Validate addon
+
+on:
+  push:
+  pull_request:
+
+env:
+  BLENDER_VERSION: "5.2.0"
+  MIN_GEOMETRY_PRECISION: "0.95"
+  MIN_GEOMETRY_RECALL: "0.95"
+  MIN_AGENT_F1: "1.00"
+
+jobs:
+  benchmark-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender headlessly
+        run: |
+          curl --fail --location --output blender.tar.xz "https://download.blender.org/release/Blender5.2/blender-${BLENDER_VERSION}-linux-x64.tar.xz"
+          tar --extract --file blender.tar.xz
+          echo "$PWD/blender-${BLENDER_VERSION}-linux-x64" >> "$GITHUB_PATH"
+      - name: Run deterministic Blender benchmarks
+        run: blender --background --python run_benchmark.py
+      - name: Enforce benchmark thresholds
+        run: python check_benchmark_thresholds.py
+      - name: Package addon
+        run: |
+          mkdir -p dist
+          zip --recurse-paths dist/asset_validator.zip asset_validator -x '*/__pycache__/*' '*.pyc'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asset-validator-addon
+          path: dist/asset_validator.zip
