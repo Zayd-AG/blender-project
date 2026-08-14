@@ -34,6 +34,7 @@ class ValidationConfig:
     triangle_budget: int = 50_000
     max_texture_size: int = 4096
     uv_area_epsilon: float = 0.00000001
+    merge_distance: float = 0.0001
 
 
 def validate_assets(
@@ -137,7 +138,7 @@ def _check_uvs(bm, object_name: str, config: ValidationConfig, findings: list[Fi
             "degenerate_uvs",
             "high",
             f"Contains {degenerate_faces} face(s) with zero-area UVs.",
-            True,
+            False,
         )
 
 
@@ -191,7 +192,7 @@ def _check_name(
             "naming_convention",
             "low",
             f"Name(s) do not match the configured pattern: {', '.join(invalid)}.",
-            True,
+            False,
         )
 
 
