@@ -8,10 +8,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-import bpy
 
 from asset_validator.agent.triage import AgentConfig, BuildReport, TriageSession
-from asset_validator.checks import load_roblox_profile, validate_assets, validate_roblox_compatibility
+from asset_validator.checks import (
+    load_roblox_profile,
+    validate_assets,
+    validate_roblox_compatibility,
+)
 from asset_validator.checks.validation import ValidationConfig
 from test.fixtures.benchmark_fixtures import build_fixtures, cleanup
 

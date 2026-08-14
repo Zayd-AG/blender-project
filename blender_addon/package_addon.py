@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import shutil
 import tempfile
 import zipfile
-
+from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parent
 REPOSITORY = PROJECT.parent

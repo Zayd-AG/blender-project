@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Iterable
 
 import bmesh
 import bpy
 
 from .checks.validation import Finding, ValidationConfig, validate_assets
-
 
 SAFE_FIXABLE_ISSUES = frozenset(
     {

@@ -3,7 +3,14 @@ target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP"]
+# Keep correctness, import hygiene, and Python-upgrade checks enforced.  Line
+# wrapping is handled by the formatter; Blender's required `bl_info` header is
+# intentionally allowed before imports.
+select = ["E4", "E7", "E9", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"asset_validator/__init__.py" = ["E402"]
+"run_benchmark.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"

@@ -15,9 +15,6 @@ from pathlib import Path
 
 import bpy
 
-from .batch_export import RobloxUploadConfig, batch_export
-from .lod import append_lod_report, generate_lods
-
 from .agent import (
     AnthropicClaudeClient,
     BuildReport,
@@ -30,9 +27,11 @@ from .agent import (
     load_agent_config,
     load_precedent_profile,
 )
+from .batch_export import RobloxUploadConfig, batch_export
 from .checks import load_roblox_profile, validate_assets, validate_roblox_compatibility
 from .checks.validation import ValidationConfig
 from .fixes import apply_safe_fixes
+from .lod import append_lod_report, generate_lods
 
 
 def _target_objects(context):

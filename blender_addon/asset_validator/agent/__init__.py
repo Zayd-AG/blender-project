@@ -1,5 +1,11 @@
 """Auditable, proposal-only agent triage for ambiguous findings."""
 
+from .precedent_store import (
+    EmbeddingConfig,
+    OpenAICompatibleEmbeddingClient,
+    PrecedentStore,
+    load_precedent_profile,
+)
 from .triage import (
     AgentConfig,
     AnthropicClaudeClient,
@@ -8,12 +14,6 @@ from .triage import (
     apply_approved_agent_resolutions,
     build_finding_contexts,
     load_agent_config,
-)
-from .precedent_store import (
-    EmbeddingConfig,
-    OpenAICompatibleEmbeddingClient,
-    PrecedentStore,
-    load_precedent_profile,
 )
 
 __all__ = (

@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from difflib import get_close_matches
-import json
 from pathlib import Path
-from typing import Iterable, Literal, TypedDict
+from typing import Literal, TypedDict
 
 import bmesh
-
 
 Severity = Literal["low", "medium", "high"]
 

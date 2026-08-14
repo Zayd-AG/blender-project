@@ -45,6 +45,7 @@ jobs:
           cargo install rokit --locked
           cd roblox_plugin
           rokit install --no-trust-check
+          echo "$HOME/.rokit/bin" >> "$GITHUB_PATH"
       - name: Lint Luau plugin source
         working-directory: roblox_plugin
         run: selene src
@@ -68,10 +69,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install pinned Roblox toolchain
+        shell: pwsh
         run: |
           cargo install rokit --locked
           cd roblox_plugin
           rokit install --no-trust-check
+          (Join-Path $HOME ".rokit/bin") | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Install TestEZ and build the test place
         working-directory: roblox_plugin
         run: |

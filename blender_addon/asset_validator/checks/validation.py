@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
-from pathlib import Path
 import re
-from typing import Iterable, Literal, TypedDict
+from collections.abc import Iterable
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Literal, TypedDict
 
 import bmesh
-
 
 Severity = Literal["low", "medium", "high"]
 

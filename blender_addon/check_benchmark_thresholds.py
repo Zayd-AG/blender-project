@@ -1,7 +1,6 @@
 """Fail CI when benchmark metrics fall below configured thresholds."""
 
 import os
-import re
 from pathlib import Path
 
 

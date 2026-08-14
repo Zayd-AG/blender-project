@@ -1,7 +1,7 @@
 """Validation checks exposed by Asset Validator."""
 
-from .validation import ValidationConfig, load_naming_pattern, validate_assets
 from .roblox_compat import RobloxConfig, load_roblox_profile, validate_roblox_compatibility
+from .validation import ValidationConfig, load_naming_pattern, validate_assets
 
 __all__ = (
     "RobloxConfig",
