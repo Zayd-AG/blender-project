@@ -16,6 +16,7 @@ from pathlib import Path
 import bpy
 
 from .batch_export import RobloxUploadConfig, batch_export
+from .lod import append_lod_report, generate_lods
 
 from .agent import (
     AnthropicClaudeClient,
@@ -249,6 +250,30 @@ class ASSETVALIDATOR_OT_batch_export(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class ASSETVALIDATOR_OT_generate_lods(bpy.types.Operator):
+    """Generate optional decimated LOD copies for the active mesh."""
+
+    bl_idname = "asset_validator.generate_lods"
+    bl_label = "Generate LODs"
+
+    def execute(self, context):
+        obj = context.active_object
+        if obj is None or obj.type != "MESH":
+            self.report({"ERROR"}, "Select a mesh object first.")
+            return {"CANCELLED"}
+        try:
+            reductions = tuple(float(value.strip()) for value in context.scene.asset_validator_lod_ratios.split(","))
+            if not 2 <= len(reductions) <= 3 or any(not 0 < value < 1 for value in reductions):
+                raise ValueError
+        except ValueError:
+            self.report({"ERROR"}, "Use two or three comma-separated ratios between 0 and 1.")
+            return {"CANCELLED"}
+        results = generate_lods(obj, reductions)
+        append_lod_report(Path(bpy.path.abspath(context.scene.asset_validator_output_directory)), obj.name, results)
+        self.report({"INFO"}, f"Generated {len(results)} LOD levels")
+        return {"FINISHED"}
+
+
 class ASSETVALIDATOR_PT_sidebar(bpy.types.Panel):
     """3D View sidebar panel for the addon."""
 
@@ -295,6 +320,10 @@ class ASSETVALIDATOR_PT_sidebar(bpy.types.Panel):
         export_box.prop(context.scene, "asset_validator_output_directory")
         export_box.prop(context.scene, "asset_validator_upload_to_roblox", text="Upload to Roblox")
         export_box.operator(ASSETVALIDATOR_OT_batch_export.bl_idname)
+        lod_box = layout.box()
+        lod_box.label(text="LOD Generation")
+        lod_box.prop(context.scene, "asset_validator_lod_ratios", text="Ratios")
+        lod_box.operator(ASSETVALIDATOR_OT_generate_lods.bl_idname)
 
 
 CLASSES = (
@@ -304,6 +333,7 @@ CLASSES = (
     ASSETVALIDATOR_OT_run_agent_triage,
     ASSETVALIDATOR_OT_record_human_resolution,
     ASSETVALIDATOR_OT_batch_export,
+    ASSETVALIDATOR_OT_generate_lods,
     ASSETVALIDATOR_OT_check_roblox_compatibility,
     ASSETVALIDATOR_PT_sidebar,
 )
@@ -319,6 +349,7 @@ def register():
     bpy.types.Scene.asset_validator_export_collection = bpy.props.PointerProperty(type=bpy.types.Collection)
     bpy.types.Scene.asset_validator_output_directory = bpy.props.StringProperty(subtype="DIR_PATH", default="//exports")
     bpy.types.Scene.asset_validator_upload_to_roblox = bpy.props.BoolProperty(default=False)
+    bpy.types.Scene.asset_validator_lod_ratios = bpy.props.StringProperty(default="0.5, 0.25, 0.1")
     for cls in CLASSES:
         bpy.utils.register_class(cls)
 
@@ -333,5 +364,6 @@ def unregister():
     del bpy.types.Scene.asset_validator_upload_to_roblox
     del bpy.types.Scene.asset_validator_output_directory
     del bpy.types.Scene.asset_validator_export_collection
+    del bpy.types.Scene.asset_validator_lod_ratios
     del bpy.types.WindowManager.asset_validator_after_count
     del bpy.types.WindowManager.asset_validator_before_count
