@@ -1,10 +1,21 @@
 {
-  "name": "AssetValidatorStudio",
+  "name": "ImportValidator",
+  "syncRules": [
+    {
+      "pattern": "../shared/*.json",
+      "use": "text"
+    }
+  ],
   "tree": {
     "$className": "DataModel",
-    "ReplicatedStorage": {
-      "AssetValidatorStudio": {
+    "ServerScriptService": {
+      "ImportValidator": {
         "$path": "src"
+      }
+    },
+    "ReplicatedStorage": {
+      "AssetValidatorShared": {
+        "$path": "../shared"
       }
     }
   }

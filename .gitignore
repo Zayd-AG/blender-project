@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 .ruff_cache/
 
+# Local documentation notes (README files remain outside docs/)
+**/docs/
+
 # Blender
 *.blend1
 *.blend2

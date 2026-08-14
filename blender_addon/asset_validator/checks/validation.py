@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import json
+from pathlib import Path
 import re
 from typing import Iterable, Literal, TypedDict
 
@@ -30,11 +32,20 @@ class ValidationConfig:
     expected_rotation: tuple[float, float, float] = (0.0, 0.0, 0.0)
     expected_scale: tuple[float, float, float] = (1.0, 1.0, 1.0)
     transform_tolerance: float = 0.00001
-    name_pattern: str = r"^SM_[A-Za-z0-9_]+$"
+    name_pattern: str = field(default_factory=lambda: load_naming_pattern())
     triangle_budget: int = 50_000
     max_texture_size: int = 4096
     uv_area_epsilon: float = 0.00000001
     merge_distance: float = 0.0001
+
+
+def load_naming_pattern() -> str:
+    """Load the shared naming contract used by Blender and the Studio plugin."""
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "shared" / "naming_pattern.json"
+        if candidate.exists():
+            return json.loads(candidate.read_text(encoding="utf-8"))["pattern"]
+    raise FileNotFoundError("shared/naming_pattern.json was not found")
 
 
 def validate_assets(

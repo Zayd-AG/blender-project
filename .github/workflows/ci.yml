@@ -11,7 +11,7 @@ env:
   MIN_AGENT_F1: "1.00"
 
 jobs:
-  benchmark-and-package:
+  blender:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,3 +35,12 @@ jobs:
         with:
           name: asset-validator-addon
           path: dist/asset_validator.zip
+  roblox-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Selene
+        run: cargo install selene --locked
+      - name: Lint Luau plugin
+        working-directory: roblox_plugin
+        run: selene src
