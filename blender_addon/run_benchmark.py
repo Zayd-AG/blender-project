@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -89,39 +90,29 @@ def run_agent():
     return metrics(expected, actual)
 
 
-def write_markdown(geometry, fixture_count, agent):
-    text = f"""# Benchmarks
-
-Regenerate after validator or agent changes:
-
-```powershell
-blender --background --python run_benchmark.py
-```
-
-Fixtures are programmatically built in `test/fixtures/benchmark_fixtures.py` and include clean controls plus generic-engine and Roblox anti-patterns.
-
-## Geometry and compatibility checks
-
-| Fixtures | Precision | Recall | F1 |
-| ---: | ---: | ---: | ---: |
-| {fixture_count} | {geometry[0]:.3f} | {geometry[1]:.3f} | {geometry[2]:.3f} |
-
-## Agent triage (deterministic mocked LLM)
-
-| Labeled ambiguous findings | Precision | Recall | F1 |
-| ---: | ---: | ---: | ---: |
-| 2 | {agent[0]:.3f} | {agent[1]:.3f} | {agent[2]:.3f} |
-
-Agent scoring compares the proposed action or escalation against human labels; it is intentionally separate from geometry detection.
-"""
-    (ROOT / "docs" / "BENCHMARKS.md").write_text(text, encoding="utf-8")
+def enforce_thresholds(geometry, agent):
+    """Fail directly when configured quality floors regress."""
+    thresholds = (
+        float(os.getenv("MIN_GEOMETRY_PRECISION", "0.95")),
+        float(os.getenv("MIN_GEOMETRY_RECALL", "0.95")),
+        float(os.getenv("MIN_AGENT_F1", "1.00")),
+    )
+    if geometry[0] < thresholds[0] or geometry[1] < thresholds[1] or agent[2] < thresholds[2]:
+        raise SystemExit(
+            "Benchmark threshold failure: "
+            f"geometry={geometry}, agent={agent}, thresholds={thresholds}"
+        )
 
 
 if __name__ == "__main__":
     cleanup()
     fixtures = build_fixtures()
-    geometry, count = run_geometry(fixtures)
+    geometry, fixture_count = run_geometry(fixtures)
     agent = run_agent()
-    write_markdown(geometry, count, agent)
-    print(f"Geometry F1: {geometry[2]:.3f}; Agent F1: {agent[2]:.3f}")
+    enforce_thresholds(geometry, agent)
+    print(
+        f"Fixtures: {fixture_count}; Geometry P/R/F1: "
+        f"{geometry[0]:.3f}/{geometry[1]:.3f}/{geometry[2]:.3f}; "
+        f"Agent P/R/F1: {agent[0]:.3f}/{agent[1]:.3f}/{agent[2]:.3f}"
+    )
     cleanup()

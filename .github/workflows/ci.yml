@@ -27,9 +27,6 @@ jobs:
         run: |
           python -m pip install ruff
           ruff check blender_addon
-      - name: Enforce benchmark thresholds
-        working-directory: blender_addon
-        run: python check_benchmark_thresholds.py
       - name: Package addon
         run: python blender_addon/package_addon.py
       - uses: actions/upload-artifact@v4
