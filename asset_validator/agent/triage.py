@@ -69,6 +69,7 @@ class FindingState:
     proposal: dict[str, Any] | None = None
     escalation_reason: str | None = None
     trace: list[dict[str, Any]] = field(default_factory=list)
+    precedent_ids: list[int] = field(default_factory=list)
 
 
 class BuildReport:
@@ -86,6 +87,7 @@ class BuildReport:
             "proposal": state.proposal,
             "escalation_reason": state.escalation_reason,
             "reasoning_trace": state.trace,
+            "precedent_ids": state.precedent_ids,
         }
         with self.path.open("a", encoding="utf-8") as report:
             report.write(json.dumps(record) + "\n")
@@ -99,6 +101,8 @@ class TriageSession:
         findings: Iterable[dict[str, Any]],
         contexts: dict[str, dict[str, Any]],
         objects_by_name: dict[str, object] | None = None,
+        precedent_store: Any | None = None,
+        precedent_top_k: int = 3,
     ):
         self.states = {
             finding_id: FindingState(
@@ -107,6 +111,8 @@ class TriageSession:
             )
             for finding_id, finding in ((f"finding-{index}", finding) for index, finding in enumerate(findings))
         }
+        self.precedent_store = precedent_store
+        self.precedent_top_k = precedent_top_k
 
     def get_finding_context(self, finding_id: str) -> dict[str, Any]:
         return self.states[finding_id].context
@@ -119,8 +125,15 @@ class TriageSession:
         return {"recorded": True}
 
     def query_precedent(self, finding_context: dict[str, Any]) -> list[dict[str, Any]]:
-        """Placeholder for the Prompt 5 RAG integration."""
-        return []
+        if self.precedent_store is None:
+            return []
+        records = self.precedent_store.query(finding_context, self.precedent_top_k)
+        finding_id = next(
+            (state.finding_id for state in self.states.values() if state.context == finding_context), None
+        )
+        if finding_id is not None:
+            self.states[finding_id].precedent_ids = [record["id"] for record in records]
+        return records
 
     def escalate(self, finding_id: str, reason: str) -> dict[str, Any]:
         self.states[finding_id].escalation_reason = reason

@@ -1,0 +1,6 @@
+{
+  "database": "asset_validator_precedents.sqlite3",
+  "embedding_endpoint": null,
+  "embedding_model": null,
+  "top_k": 3
+}

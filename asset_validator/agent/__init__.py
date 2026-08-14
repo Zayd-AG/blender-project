@@ -9,6 +9,12 @@ from .triage import (
     build_finding_contexts,
     load_agent_config,
 )
+from .precedent_store import (
+    EmbeddingConfig,
+    OpenAICompatibleEmbeddingClient,
+    PrecedentStore,
+    load_precedent_profile,
+)
 
 __all__ = (
     "AgentConfig",
@@ -18,4 +24,8 @@ __all__ = (
     "apply_approved_agent_resolutions",
     "build_finding_contexts",
     "load_agent_config",
+    "EmbeddingConfig",
+    "OpenAICompatibleEmbeddingClient",
+    "PrecedentStore",
+    "load_precedent_profile",
 )

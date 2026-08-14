@@ -18,10 +18,14 @@ import bpy
 from .agent import (
     AnthropicClaudeClient,
     BuildReport,
+    EmbeddingConfig,
+    OpenAICompatibleEmbeddingClient,
+    PrecedentStore,
     TriageSession,
     apply_approved_agent_resolutions,
     build_finding_contexts,
     load_agent_config,
+    load_precedent_profile,
 )
 from .checks import load_roblox_profile, validate_assets, validate_roblox_compatibility
 from .checks.validation import ValidationConfig
@@ -38,6 +42,7 @@ def _roblox_target_objects(context):
 
 
 _triage_session: TriageSession | None = None
+_precedent_store: PrecedentStore | None = None
 
 
 class ASSETVALIDATOR_Preferences(bpy.types.AddonPreferences):
@@ -55,10 +60,14 @@ class ASSETVALIDATOR_Preferences(bpy.types.AddonPreferences):
         description="Optional model override; leave blank to use the project profile or environment",
         default="",
     )
+    embedding_endpoint: bpy.props.StringProperty(name="Embedding Endpoint", default="")
+    embedding_model: bpy.props.StringProperty(name="Embedding Model", default="")
 
     def draw(self, context):
         self.layout.prop(self, "roblox_rig_type")
         self.layout.prop(self, "claude_model")
+        self.layout.prop(self, "embedding_endpoint")
+        self.layout.prop(self, "embedding_model")
 
 
 class ASSETVALIDATOR_OT_run_validation(bpy.types.Operator):
@@ -125,7 +134,7 @@ class ASSETVALIDATOR_OT_run_agent_triage(bpy.types.Operator):
     bl_label = "Run Agent Triage"
 
     def execute(self, context):
-        global _triage_session
+        global _triage_session, _precedent_store
         preferences = context.preferences.addons[__package__].preferences
         general_objects = _target_objects(context)
         roblox_objects = _roblox_target_objects(context)
@@ -138,11 +147,31 @@ class ASSETVALIDATOR_OT_run_agent_triage(bpy.types.Operator):
             if not finding["auto_fixable"]
         ]
         objects = {obj.name: obj for obj in context.scene.objects}
+        precedent_profile = load_precedent_profile()
+        precedent_path = Path(bpy.path.abspath(f"//{precedent_profile['database']}"))
+        try:
+            _precedent_store = PrecedentStore(
+                precedent_path,
+                OpenAICompatibleEmbeddingClient(
+                    EmbeddingConfig(
+                        preferences.embedding_endpoint or precedent_profile["embedding_endpoint"],
+                        preferences.embedding_model or precedent_profile["embedding_model"],
+                        __import__("os").getenv("ASSET_VALIDATOR_EMBEDDING_API_KEY"),
+                        int(precedent_profile["top_k"]),
+                    )
+                ),
+            )
+        except ValueError as error:
+            self.report({"ERROR"}, str(error))
+            return {"CANCELLED"}
         _triage_session = TriageSession(
             findings,
             build_finding_contexts(findings, objects, validation_config, roblox_config),
             objects,
+            _precedent_store,
+            int(precedent_profile["top_k"]),
         )
+        context.window_manager.asset_validator_precedent_count = _precedent_store.count()
         config = load_agent_config(preferences.claude_model or None)
         report_path = Path(bpy.path.abspath(f"//{config.build_report}"))
         config = replace(config, build_report=report_path)
@@ -155,6 +184,33 @@ class ASSETVALIDATOR_OT_run_agent_triage(bpy.types.Operator):
         escalated = sum(state.escalation_reason is not None for state in _triage_session.states.values())
         context.window_manager.asset_validator_triage_summary = f"{proposed} proposed, {escalated} escalated"
         self.report({"INFO"}, f"Agent triage: {proposed} proposed, {escalated} escalated")
+        return {"FINISHED"}
+
+
+class ASSETVALIDATOR_OT_record_human_resolution(bpy.types.Operator):
+    """Record a human accept, reject, or override as a reusable precedent."""
+
+    bl_idname = "asset_validator.record_human_resolution"
+    bl_label = "Record Resolution"
+    finding_id: bpy.props.StringProperty()
+    decision: bpy.props.EnumProperty(items=(("accept", "Accept", "Accept suggestion"), ("reject", "Reject", "Reject suggestion"), ("override", "Override", "Enter a different resolution")))
+    override_text: bpy.props.StringProperty(name="Override resolution", default="")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self) if self.decision == "override" else self.execute(context)
+
+    def draw(self, context):
+        self.layout.prop(self, "override_text")
+
+    def execute(self, context):
+        if _triage_session is None or _precedent_store is None:
+            self.report({"ERROR"}, "Run Agent Triage before recording a resolution.")
+            return {"CANCELLED"}
+        state = _triage_session.states[self.finding_id]
+        resolution = state.proposal["resolution"] if self.decision == "accept" and state.proposal else {"action": self.decision, "text": self.override_text}
+        _precedent_store.add(state.finding["issue"], __import__("json").dumps(state.context), resolution, state.proposal["confidence"] if state.proposal else 1.0, "human")
+        context.window_manager.asset_validator_precedent_count = _precedent_store.count()
+        self.report({"INFO"}, "Human resolution added to precedents")
         return {"FINISHED"}
 
 
@@ -187,12 +243,17 @@ class ASSETVALIDATOR_PT_sidebar(bpy.types.Panel):
                     row.label(text=state.proposal["reasoning"])
                 elif state.escalation_reason:
                     row.label(text=f"Escalated: {state.escalation_reason}")
+                for decision, label in (("accept", "Accept"), ("reject", "Reject"), ("override", "Override")):
+                    action = row.operator(ASSETVALIDATOR_OT_record_human_resolution.bl_idname, text=label)
+                    action.finding_id = state.finding_id
+                    action.decision = decision
         roblox_box = layout.box()
         roblox_box.label(text="Roblox Compatibility")
         roblox_box.operator(ASSETVALIDATOR_OT_check_roblox_compatibility.bl_idname)
         roblox_count = context.window_manager.asset_validator_roblox_count
         if roblox_count >= 0:
             roblox_box.label(text=f"Findings: {roblox_count}")
+        layout.label(text=f"Precedents learned: {context.window_manager.asset_validator_precedent_count}")
 
 
 CLASSES = (
@@ -200,6 +261,7 @@ CLASSES = (
     ASSETVALIDATOR_OT_run_validation,
     ASSETVALIDATOR_OT_apply_safe_fixes,
     ASSETVALIDATOR_OT_run_agent_triage,
+    ASSETVALIDATOR_OT_record_human_resolution,
     ASSETVALIDATOR_OT_check_roblox_compatibility,
     ASSETVALIDATOR_PT_sidebar,
 )
@@ -211,6 +273,7 @@ def register():
     bpy.types.WindowManager.asset_validator_after_count = bpy.props.IntProperty(default=-1)
     bpy.types.WindowManager.asset_validator_roblox_count = bpy.props.IntProperty(default=-1)
     bpy.types.WindowManager.asset_validator_triage_summary = bpy.props.StringProperty(default="")
+    bpy.types.WindowManager.asset_validator_precedent_count = bpy.props.IntProperty(default=0)
     for cls in CLASSES:
         bpy.utils.register_class(cls)
 
@@ -221,5 +284,6 @@ def unregister():
         bpy.utils.unregister_class(cls)
     del bpy.types.WindowManager.asset_validator_roblox_count
     del bpy.types.WindowManager.asset_validator_triage_summary
+    del bpy.types.WindowManager.asset_validator_precedent_count
     del bpy.types.WindowManager.asset_validator_after_count
     del bpy.types.WindowManager.asset_validator_before_count
